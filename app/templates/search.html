@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{% if query %}Search: {{ query }}{% else %}Search{% endif %} — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.search-hero { background:var(--bg2); border-bottom:1px solid var(--border); padding:2rem 1.5rem; }
+.search-hero-inner { max-width:1200px; margin:0 auto; }
+.search-bar { display:flex; border:1.5px solid var(--border); border-radius:calc(var(--r)+2px); overflow:hidden; background:#fff; max-width:600px; transition:border-color .15s,box-shadow .15s; }
+.search-bar:focus-within { border-color:var(--ink); box-shadow:0 0 0 3px rgba(17,17,16,.07); }
+.search-bar input { flex:1; border:none; background:transparent; padding:.65rem 1rem; font-family:inherit; font-size:.95rem; color:var(--ink); outline:none; }
+.search-bar button { background:var(--ink); color:#fff; border:none; padding:.65rem 1.25rem; font-family:inherit; font-size:.875rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+.search-hint { font-size:.8rem; color:var(--muted); margin-top:.75rem; }
+.search-body { max-width:1200px; margin:0 auto; padding:1.75rem 1.5rem 3rem; }
+.result-meta { font-size:.83rem; color:var(--muted); margin-bottom:1.1rem; }
+.suggestions { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.65rem; }
+.c-card { background:var(--bg); border:1px solid var(--border); border-radius:calc(var(--r)+2px); display:flex; flex-direction:column; gap:.45rem; padding:1.2rem; height:100%; transition:box-shadow .15s,transform .15s; }
+.c-card:hover { box-shadow:var(--shadow); transform:translateY(-2px); }
+</style>
+
+<div class="search-hero">
+  <div class="search-hero-inner">
+    <form action="{{ url_for('main.search') }}" method="get">
+      <div class="search-bar">
+        <input type="text" name="q" placeholder="Search courses, topics, instructors…" value="{{ query }}" autofocus>
+        <button type="submit">Search</button>
+      </div>
+    </form>
+    {% if not query %}
+    <div class="search-hint">
+      Try: <span class="suggestions">
+        {% for term in ['Python','Machine Learning','React','SQL','Docker','Swift','Figma','AWS','Blockchain','Statistics'] %}
+        <a href="{{ url_for('main.search', q=term) }}" class="tag">{{ term }}</a>
+        {% endfor %}
+      </span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="search-body">
+  {% if query %}
+    <div class="result-meta">
+      {% if results %}
+        Found <strong>{{ results|length }}</strong> result{{ 's' if results|length!=1 }} for "<strong>{{ query }}</strong>"
+      {% else %}
+        No results for "<strong>{{ query }}</strong>"
+      {% endif %}
+    </div>
+
+    {% if results %}
+    <div class="grid-3">
+      {% for item in results %}
+      {% set c = item.course %}
+      <a href="{{ url_for('courses.course_detail', course_id=c.id) }}" style="text-decoration:none;color:inherit;display:contents;">
+        <div class="c-card">
+          <div class="flex gap-1"><span class="badge badge-{{ c.level|lower }}">{{ c.level }}</span><span class="badge badge-neutral">{{ c.category }}</span></div>
+          <div class="fw-700 font-syne" style="font-size:.97rem;line-height:1.3;">{{ c.title }}</div>
+          <p class="text-sm text-muted" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1;">{{ c.description }}</p>
+          <div style="display:flex;justify-content:space-between;font-size:.77rem;color:var(--muted);padding-top:.5rem;border-top:1px solid var(--border);">
+            <span>{{ c.instructor }}</span>
+            <span>{% if item.avg_rating %}⭐ {{ item.avg_rating }}{% else %}⏱ {{ c.duration }}{% endif %}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <div class="empty-icon">🔍</div>
+      <div class="fw-700 font-syne" style="font-size:1.1rem;">No results found</div>
+      <p class="text-sm mt-1">Try a different search term, or browse by topic:</p>
+      <div class="suggestions" style="justify-content:center;margin-top:.75rem;">
+        {% for term in ['Python','React','SQL','Machine Learning','AWS','Docker'] %}
+        <a href="{{ url_for('main.search', q=term) }}" class="tag">{{ term }}</a>
+        {% endfor %}
+      </div>
+      <a href="{{ url_for('courses.course_list') }}" class="btn btn-primary mt-3">Browse all courses</a>
+    </div>
+    {% endif %}
+  {% else %}
+  <!-- No query state — show popular topics -->
+  <div class="fw-700 font-syne mb-3">Popular topics</div>
+  <div class="grid-3">
+    {% for cat, icon, desc in [
+      ('Programming','🐍','Python, algorithms, data structures'),
+      ('Data Science','📊','Pandas, NumPy, ML pipelines'),
+      ('Web Dev','🌐','Flask, Django, React, JavaScript'),
+      ('AI & ML','🤖','Neural networks, PyTorch, scikit-learn'),
+      ('Security','🔒','Ethical hacking, cryptography, CTF'),
+      ('Cloud','☁️','AWS, serverless, infrastructure')
+    ] %}
+    <a href="{{ url_for('courses.course_list', category=cat) }}" style="text-decoration:none;color:inherit;">
+      <div class="c-card">
+        <div style="font-size:1.5rem;">{{ icon }}</div>
+        <div class="fw-700 font-syne">{{ cat }}</div>
+        <div class="text-sm text-muted">{{ desc }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

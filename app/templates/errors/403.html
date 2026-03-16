@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Access denied — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.error-page { max-width:560px; margin:5rem auto; padding:0 1.5rem; text-align:center; }
+.error-code { font-family:'Syne',sans-serif; font-size:6rem; font-weight:800; letter-spacing:-.05em; color:var(--bg3); line-height:1; }
+.error-title { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:700; margin:.5rem 0; }
+.error-desc { color:var(--muted); font-size:.925rem; line-height:1.65; margin-bottom:1.75rem; }
+</style>
+<div class="error-page">
+  <div class="error-code">403</div>
+  <div class="error-title">Access denied</div>
+  <p class="error-desc">You don't have permission to view this page. If you believe this is a mistake, please sign in with an account that has the required access.</p>
+  <div class="flex gap-2" style="justify-content:center;flex-wrap:wrap;">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Sign in</a>
+    <a href="{{ url_for('main.home') }}" class="btn btn-secondary">Go home</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} — LearnSphere{% endblock %}
+{% block head %}
+<meta name="csrf" content="{{ csrf_token() }}">
+<style>
+/* ── Hero ── */
+.detail-hero { border-bottom:1px solid var(--border); padding:2.5rem 1.5rem; background:var(--bg2); }
+.detail-hero-inner { max-width:1200px; margin:0 auto; }
+.breadcrumb { font-size:.8rem; color:var(--muted); margin-bottom:.9rem; }
+.breadcrumb a { color:var(--muted); text-decoration:none; }
+.breadcrumb a:hover { color:var(--ink); }
+.detail-hero h1 { font-family:'Syne',sans-serif; font-size:clamp(1.5rem,4vw,2rem); font-weight:800; letter-spacing:-.03em; line-height:1.2; max-width:780px; }
+.detail-meta { display:flex; gap:1.25rem; flex-wrap:wrap; margin-top:.9rem; font-size:.83rem; color:var(--muted); }
+
+/* ── Layout ── */
+.detail-body { max-width:1200px; margin:0 auto; padding:2rem 1.5rem; display:grid; grid-template-columns:1fr 320px; gap:2.5rem; align-items:start; }
+@media(max-width:900px){ .detail-body{grid-template-columns:1fr;} }
+.detail-main > section { margin-bottom:2.25rem; }
+.detail-main h2 { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; letter-spacing:-.01em; margin-bottom:.85rem; padding-bottom:.5rem; border-bottom:1px solid var(--border); }
+
+/* ── What you'll learn ── */
+.learn-grid { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+@media(max-width:600px){ .learn-grid{grid-template-columns:1fr;} }
+.learn-item { display:flex; gap:.6rem; align-items:flex-start; font-size:.875rem; line-height:1.5; }
+.learn-item::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:.05rem; }
+
+/* ── Requirements ── */
+.req-list { display:flex; flex-direction:column; gap:.4rem; }
+.req-item { font-size:.875rem; display:flex; gap:.6rem; align-items:flex-start; }
+.req-item::before { content:'·'; color:var(--muted); font-weight:700; flex-shrink:0; }
+
+/* ── Rich overview ── */
+.overview-body { font-size:.9rem; color:var(--ink2); line-height:1.75; }
+.overview-body h4 { font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; margin:1.25rem 0 .4rem; color:var(--ink); }
+.overview-body p { margin-bottom:.75rem; }
+.overview-body ul { padding-left:1.25rem; margin-bottom:.75rem; }
+.overview-body li { margin-bottom:.3rem; }
+.overview-body code { background:var(--bg3); padding:.1rem .35rem; border-radius:4px; font-size:.83rem; font-family:monospace; }
+.overview-body blockquote { border-left:3px solid var(--border); padding:.6rem 1rem; margin:.75rem 0; color:var(--muted); font-style:italic; font-size:.875rem; }
+.overview-body strong { color:var(--ink); }
+
+/* ── Video ── */
+.video-wrap { position:relative; padding-bottom:56.25%; border-radius:var(--r); overflow:hidden; background:var(--bg3); border:1px solid var(--border); }
+.video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+
+/* ── Syllabus ── */
+.syllabus-list { display:flex; flex-direction:column; gap:.35rem; }
+.syllabus-item { font-size:.875rem; padding:.5rem .75rem; background:var(--bg2); border-radius:var(--r); display:flex; gap:.75rem; }
+.syllabus-num { font-family:'Syne',sans-serif; font-weight:700; font-size:.75rem; color:var(--muted); width:1.5rem; flex-shrink:0; margin-top:.1rem; }
+
+/* ── Lessons ── */
+.lesson-list { display:flex; flex-direction:column; gap:.3rem; }
+.lesson-item { display:flex; align-items:center; gap:.75rem; padding:.55rem .85rem; border-radius:var(--r); background:var(--bg2); font-size:.875rem; }
+.lesson-item.done { color:var(--muted); text-decoration:line-through; }
+.lesson-check { width:18px; height:18px; border-radius:50%; border:1.5px solid var(--border); flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.65rem; transition:all .12s; }
+.lesson-check.done { background:var(--ink); border-color:var(--ink); color:#fff; }
+
+/* ── Tags ── */
+.tags-row { display:flex; flex-wrap:wrap; gap:.4rem; }
+
+/* ── Reviews ── */
+.rating-summary { display:flex; align-items:center; gap:1rem; padding:1rem; background:var(--bg2); border-radius:var(--r); margin-bottom:1rem; }
+.rating-big { font-family:'Syne',sans-serif; font-size:2.5rem; font-weight:800; line-height:1; }
+.star-input { display:flex; flex-direction:row-reverse; gap:.2rem; }
+.star-input label { font-size:1.4rem; cursor:pointer; color:var(--border); transition:color .1s; }
+.star-input input { display:none; }
+.star-input input:checked ~ label,
+.star-input label:hover,
+.star-input label:hover ~ label { color:#f59e0b; }
+.review-card { padding:1rem; border:1px solid var(--border); border-radius:var(--r); }
+.review-header { display:flex; align-items:center; gap:.65rem; margin-bottom:.5rem; }
+
+/* ── Sidebar ── */
+.sidebar { position:sticky; top:72px; }
+.enroll-card { border:1px solid var(--border); border-radius:calc(var(--r)+2px); overflow:hidden; }
+.enroll-card-body { padding:1.25rem; }
+.enroll-price { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; }
+.enroll-meta { display:flex; flex-direction:column; gap:.45rem; margin:1rem 0; font-size:.83rem; color:var(--muted); }
+.progress-section { padding:.85rem 1.25rem; background:var(--bg2); border-top:1px solid var(--border); font-size:.8rem; }
+
+/* ── Certificate banner ── */
+.cert-banner { background:var(--ink); color:#fff; border-radius:var(--r); padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+.cert-banner-text { flex:1; font-size:.875rem; }
+.cert-banner-text strong { display:block; font-family:'Syne',sans-serif; font-size:1rem; margin-bottom:.2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-hero">
+  <div class="detail-hero-inner">
+    <div class="breadcrumb">
+      <a href="{{ url_for('courses.course_list') }}">Courses</a> &rsaquo;
+      <a href="{{ url_for('courses.course_list', category=course.category) }}">{{ course.category }}</a> &rsaquo;
+      {{ course.title }}
+    </div>
+    <div class="flex items-center gap-1 mb-2" style="flex-wrap:wrap;">
+      <span class="badge badge-{{ course.level|lower }}">{{ course.level }}</span>
+      <span class="badge badge-neutral">{{ course.category }}</span>
+      {% if avg_rating %}<span class="badge badge-neutral">⭐ {{ avg_rating }} ({{ reviews|length }} review{{ 's' if reviews|length!=1 }})</span>{% endif %}
+    </div>
+    <h1>{{ course.title }}</h1>
+    <div class="detail-meta">
+      <span>👤 {{ course.instructor }}</span>
+      <span>⏱ {{ course.duration }}</span>
+      <span>📚 {{ lessons|length }} lessons</span>
+      {% if course.category %}<span>🗂 {{ course.category }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="detail-body">
+  <div class="detail-main">
+
+    {% if certificate %}
+    <div class="cert-banner">
+      <span style="font-size:1.75rem;">🎓</span>
+      <div class="cert-banner-text">
+        <strong>Certificate earned!</strong>
+        You've completed all lessons in this course.
+      </div>
+      <a href="{{ url_for('courses.verify_certificate', cert_code=certificate.cert_code) }}" class="btn btn-sm" style="background:#fff;color:var(--ink);" target="_blank">View certificate →</a>
+    </div>
+    {% endif %}
+
+    <!-- WHAT YOU'LL LEARN -->
+    {% if what_you_learn %}
+    <section>
+      <h2>What you'll learn</h2>
+      <div class="learn-grid">
+        {% for item in what_you_learn %}
+        <div class="learn-item">{{ item }}</div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ABOUT THIS COURSE (rich overview) -->
+    <section>
+      <h2>About this course</h2>
+      {% if overview %}
+      <div class="overview-body">{{ overview|safe }}</div>
+      {% else %}
+      <p style="color:var(--ink2);line-height:1.7;font-size:.92rem;">{{ course.description }}</p>
+      {% endif %}
+      {% if tags %}
+      <div class="tags-row mt-3">
+        {% for t in tags %}
+        <a href="{{ url_for('courses.course_list', tag=t) }}" class="tag">{{ t }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- REQUIREMENTS -->
+    {% if requirements %}
+    <section>
+      <h2>Requirements</h2>
+      <div class="req-list">
+        {% for req in requirements %}
+        <div class="req-item">{{ req }}</div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- VIDEO PREVIEW -->
+    {% if course.video_url %}
+    <section>
+      <h2>Video preview</h2>
+      <div class="video-wrap">
+        <iframe src="{{ course.video_url }}" allowfullscreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+        </iframe>
+      </div>
+      <p class="text-xs text-muted mt-2">Preview video — full course content delivered through lessons and written materials above.</p>
+    </section>
+    {% endif %}
+
+    <!-- SYLLABUS -->
+    {% if syllabus %}
+    <section>
+      <h2>Course syllabus</h2>
+      <div class="syllabus-list">
+        {% for item in syllabus %}
+        <div class="syllabus-item">
+          <span class="syllabus-num">{{ loop.index }}</span>
+          <span>{{ item }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- LESSONS (trackable) -->
+    {% if lessons %}
+    <section>
+      <h2>Lessons
+        <span class="text-muted text-sm fw-600" id="progress-label" style="font-family:'Instrument Sans',sans-serif;">
+          {% if enrolled %}&nbsp;— {{ completed_lessons|length }}/{{ lessons|length }} complete{% endif %}
+        </span>
+      </h2>
+      {% if enrolled %}
+      <div class="progress-bar mb-3" id="progress-bar-wrap">
+        <div class="progress-fill" id="progress-fill"
+          style="width:{% if lessons %}{{ (completed_lessons|length / lessons|length * 100)|int }}{% else %}0{% endif %}%">
+        </div>
+      </div>
+      {% endif %}
+      <div class="lesson-list">
+        {% for lesson in lessons %}
+        <div class="lesson-item {% if lesson.id in completed_lessons %}done{% endif %}" id="lesson-{{ lesson.id }}">
+          {% if enrolled %}
+          <div class="lesson-check {% if lesson.id in completed_lessons %}done{% endif %}"
+            onclick="toggleLesson({{ lesson.id }}, {{ course.id }}, this)"
+            title="Mark {% if lesson.id in completed_lessons %}incomplete{% else %}complete{% endif %}">
+            {% if lesson.id in completed_lessons %}✓{% endif %}
+          </div>
+          {% else %}
+          <div class="lesson-check" style="opacity:.3;cursor:default;"></div>
+          {% endif %}
+          <span>{{ lesson.title }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if not enrolled %}
+      <p class="text-sm text-muted mt-2">Enrol to track your lesson progress and earn a certificate.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- INSTRUCTOR -->
+    {% if course.instructor_bio %}
+    <section>
+      <h2>About the instructor</h2>
+      <div class="flex items-center gap-2">
+        <div class="avatar" style="width:44px;height:44px;font-size:1rem;background:var(--ink);">
+          {{ course.instructor[0] }}
+        </div>
+        <div>
+          <div class="fw-600">{{ course.instructor }}</div>
+          <div class="text-sm text-muted">{{ course.instructor_bio }}</div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- REVIEWS -->
+    <section>
+      <h2>Student reviews</h2>
+      {% if avg_rating %}
+      <div class="rating-summary">
+        <div class="rating-big">{{ avg_rating }}</div>
+        <div>
+          <div class="stars">
+            {% for i in range(1,6) %}<span class="star {% if i <= avg_rating|round %}filled{% endif %}">★</span>{% endfor %}
+          </div>
+          <div class="text-xs text-muted mt-1">{{ reviews|length }} review{{ 's' if reviews|length!=1 }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if session.get('user_id') and enrolled and not user_review %}
+      <div class="card card-body mb-3">
+        <div class="fw-600 text-sm mb-2">Leave a review</div>
+        <form method="POST" action="{{ url_for('courses.submit_review', course_id=course.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <div class="form-group">
+            <label class="form-label">Rating</label>
+            <div class="star-input">
+              {% for i in range(5,0,-1) %}
+              <input type="radio" name="rating" id="s{{ i }}" value="{{ i }}" {% if i==5 %}checked{% endif %}>
+              <label for="s{{ i }}">★</label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="form-group">
+            <textarea name="body" class="form-control" placeholder="Share what you learned or what you'd change…" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Post review</button>
+        </form>
+      </div>
+      {% endif %}
+
+      {% if reviews %}
+      <div style="display:flex;flex-direction:column;gap:.75rem;">
+        {% for r in reviews %}
+        <div class="review-card">
+          <div class="review-header">
+            <div class="avatar" style="width:30px;height:30px;font-size:.72rem;background:{{ r.avatar_color }};">
+              {{ r.username[0].upper() }}
+            </div>
+            <div>
+              <div class="fw-600 text-sm">{{ r.username }}</div>
+              <div class="stars" style="gap:1px;">
+                {% for i in range(1,6) %}<span class="star {% if i<=r.rating %}filled{% endif %}" style="font-size:.75rem;">★</span>{% endfor %}
+              </div>
+            </div>
+            <div class="text-xs text-muted" style="margin-left:auto;">{{ r.created_at[:10] }}</div>
+          </div>
+          {% if r.body %}<div class="text-sm" style="color:var(--ink2);line-height:1.55;">{{ r.body }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted text-sm">No reviews yet. Enrol and be the first!</p>
+      {% endif %}
+    </section>
+
+    <!-- RELATED -->
+    {% if related %}
+    <section>
+      <h2>Related courses</h2>
+      <div class="grid-3" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));">
+        {% for rc in related %}
+        <a href="{{ url_for('courses.course_detail', course_id=rc.id) }}" style="text-decoration:none;color:inherit;">
+          <div class="card card-body">
+            <span class="badge badge-{{ rc.level|lower }}">{{ rc.level }}</span>
+            <div class="fw-600 text-sm mt-1" style="font-family:'Syne',sans-serif;">{{ rc.title }}</div>
+            <div class="text-xs text-muted mt-1">⏱ {{ rc.duration }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </div><!-- /detail-main -->
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="enroll-card">
+      <div class="enroll-card-body">
+        <div class="enroll-price">Free</div>
+        {% if enrolled %}
+        <div class="badge badge-beginner mt-1" style="background:var(--green-bg);color:var(--green);">✓ Enrolled</div>
+        <form method="POST" action="{{ url_for('courses.unenroll', course_id=course.id) }}" class="mt-2">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button type="submit" onclick="return confirm('Unenrol from this course? Your progress will be saved.')"
+            class="btn btn-ghost btn-sm btn-full" style="color:var(--muted);font-size:.78rem;">Unenrol</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('courses.enroll', course_id=course.id) }}" class="mt-2">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary btn-full btn-lg">Enrol now — free</button>
+        </form>
+        {% endif %}
+        <div class="enroll-meta mt-2">
+          <span>⏱ {{ course.duration }}</span>
+          <span>📚 {{ lessons|length }} lessons</span>
+          <span>📊 {{ course.level }}</span>
+          <span>👤 {{ course.instructor }}</span>
+          {% if avg_rating %}<span>⭐ {{ avg_rating }}/5 rating</span>{% endif %}
+          <span>🎓 Certificate on completion</span>
+        </div>
+      </div>
+      {% if enrolled and lessons %}
+      <div class="progress-section">
+        <div class="flex justify-between mb-1">
+          <span>Your progress</span>
+          <span id="sidebar-progress">{{ completed_lessons|length }}/{{ lessons|length }}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="sidebar-fill"
+            style="width:{{ (completed_lessons|length / lessons|length * 100)|int if lessons else 0 }}%">
+          </div>
+        </div>
+        {% if certificate %}
+        <div class="mt-2">
+          <a href="{{ url_for('courses.verify_certificate', cert_code=certificate.cert_code) }}"
+            class="btn btn-sm btn-full" style="background:var(--green-bg);color:var(--green);border-color:#bbf7d0;" target="_blank">
+            🎓 View certificate
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- What's included -->
+    <div class="card card-body mt-2" style="font-size:.83rem;">
+      <div class="fw-600 mb-2" style="font-family:'Syne',sans-serif;">This course includes</div>
+      <div style="display:flex;flex-direction:column;gap:.45rem;color:var(--ink2);">
+        {% if course.video_url %}<div>📹 Video preview</div>{% endif %}
+        <div>📖 Full written curriculum</div>
+        <div>✅ {{ lessons|length }} trackable lessons</div>
+        {% if syllabus %}<div>🗓 Week-by-week syllabus</div>{% endif %}
+        <div>⭐ Student reviews</div>
+        <div>🎓 Completion certificate</div>
+        <div>🔖 Topic tags &amp; related courses</div>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleLesson(lessonId, courseId, el) {
+  try {
+    const csrf = document.querySelector('meta[name=csrf]').content;
+    const res = await fetch(`/courses/${courseId}/progress`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lesson_id: lessonId, _csrf: csrf})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const item = document.getElementById(`lesson-${lessonId}`);
+      if (data.done) {
+        el.classList.add('done'); el.innerHTML = '✓'; item.classList.add('done');
+      } else {
+        el.classList.remove('done'); el.innerHTML = ''; item.classList.remove('done');
+      }
+      const pct = data.total ? Math.round(data.completed / data.total * 100) : 0;
+      const pf = document.getElementById('progress-fill');
+      if (pf) pf.style.width = pct + '%';
+      const sf = document.getElementById('sidebar-fill');
+      if (sf) sf.style.width = pct + '%';
+      const sp = document.getElementById('sidebar-progress');
+      if (sp) sp.textContent = `${data.completed}/${data.total}`;
+      const pl = document.getElementById('progress-label');
+      if (pl) pl.textContent = `\u00a0— ${data.completed}/${data.total} complete`;
+      if (data.cert_code) {
+        // Certificate just earned — reload to show banner
+        window.location.reload();
+      }
+    }
+  } catch(e) { console.error(e); }
+}
+</script>
+{% endblock %}

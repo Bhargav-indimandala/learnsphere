@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Admin — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.admin-header { background: var(--ink); color: #fff; padding: 1.75rem 1.5rem; }
+.admin-header-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.admin-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; letter-spacing: -.02em; }
+.admin-subtitle { font-size: .8rem; color: rgba(255,255,255,.5); margin-top: .2rem; }
+.admin-body { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: .75rem; margin-bottom: 2rem; }
+.stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: calc(var(--r)+2px); padding: 1rem; }
+.stat-box .n { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+.stat-box .l { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-top: .2rem; }
+.admin-section { margin-bottom: 2.5rem; }
+.admin-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.admin-section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+.popular-bar { display: flex; align-items: center; gap: 1rem; padding: .65rem .85rem; border-bottom: 1px solid var(--border); font-size: .875rem; }
+.popular-bar:last-child { border-bottom: none; }
+.popular-name { flex: 1; font-weight: 500; }
+.popular-count { color: var(--muted); font-size: .8rem; }
+.tabs { display: flex; gap: .25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+.tab { padding: .5rem 1rem; font-size: .875rem; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s; }
+.tab.active { color: var(--ink); border-color: var(--ink); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+</style>
+
+<div class="admin-header">
+  <div class="admin-header-inner">
+    <div>
+      <div class="admin-title">Admin panel</div>
+      <div class="admin-subtitle">Manage courses, users, and content</div>
+    </div>
+    <a href="{{ url_for('admin.new_course') }}" class="btn btn-lg" style="background:#fff;color:var(--ink);">+ New course</a>
+  </div>
+</div>
+
+<div class="admin-body">
+  <div class="stat-grid">
+    <div class="stat-box"><div class="n">{{ stats.courses }}</div><div class="l">Courses</div></div>
+    <div class="stat-box"><div class="n">{{ stats.users }}</div><div class="l">Users</div></div>
+    <div class="stat-box"><div class="n">{{ stats.enrollments }}</div><div class="l">Enrollments</div></div>
+    <div class="stat-box"><div class="n">{{ stats.reviews }}</div><div class="l">Reviews</div></div>
+    <div class="stat-box"><div class="n">{{ stats.beginner }}</div><div class="l">Beginner</div></div>
+    <div class="stat-box"><div class="n">{{ stats.intermediate }}</div><div class="l">Intermediate</div></div>
+    <div class="stat-box"><div class="n">{{ stats.advanced }}</div><div class="l">Advanced</div></div>
+  </div>
+
+  {% if popular %}
+  <div class="admin-section">
+    <div class="admin-section-title mb-2">Popular courses</div>
+    <div class="card" style="overflow:hidden;">
+      {% for p in popular %}
+      <div class="popular-bar">
+        <div class="popular-name">{{ p.title }}</div>
+        <div class="popular-count">{{ p.enroll_count }} enrolled</div>
+        {% if p.avg_rating %}<div class="popular-count">⭐ {{ "%.1f"|format(p.avg_rating) }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('courses',this)">Courses ({{ courses|length }})</div>
+    <div class="tab" onclick="switchTab('users',this)">Users ({{ users|length }})</div>
+    <div class="tab" onclick="switchTab('announcements',this)">Announcements ({{ announcements|length }})</div>
+  </div>
+
+  <div class="tab-panel active" id="tab-courses">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Category</th><th>Level</th><th>Instructor</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for c in courses %}
+          <tr>
+            <td><a href="{{ url_for('courses.course_detail', course_id=c.id) }}" style="text-decoration:none;font-weight:500;color:var(--ink);">{{ c.title }}</a></td>
+            <td><span class="badge badge-neutral">{{ c.category }}</span></td>
+            <td><span class="badge badge-{{ c.level|lower }}">{{ c.level }}</span></td>
+            <td class="text-muted">{{ c.instructor }}</td>
+            <td>
+              <div class="flex gap-1">
+                <a href="{{ url_for('admin.edit_course', course_id=c.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                <form method="POST" action="{{ url_for('admin.delete_course', course_id=c.id) }}" onsubmit="return confirm('Delete course?')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}" onsubmit="return confirm('Delete \'{{ c.title }}\'?')">
+                  <button type="submit" class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border-color:#fecaca;">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem;">No courses yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-users">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div class="flex items-center gap-1">
+                <div class="avatar" style="width:28px;height:28px;font-size:.7rem;background:{{ u.avatar_color or '#18181b' }};">{{ u.username[0].upper() }}</div>
+                <span class="fw-600">{{ u.username }}</span>
+              </div>
+            </td>
+            <td class="text-muted">{{ u.email }}</td>
+            <td>{% if u.is_admin %}<span class="badge badge-blue">Admin</span>{% else %}<span class="badge badge-neutral">Student</span>{% endif %}</td>
+            <td class="text-muted text-sm">{{ u.created_at[:10] }}</td>
+            <td>
+              <div class="flex gap-1">
+                {% if u.id != session.get('user_id') %}
+                <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=u.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-secondary btn-sm">
+                    {% if u.is_admin %}Revoke admin{% else %}Make admin{% endif %}
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete user?')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border-color:#fecaca;">Delete</button>
+                </form>
+                {% else %}
+                <span class="text-xs text-muted" style="padding:.3rem .65rem;">You</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Announcements tab panel -->
+  <div class="tab-panel" id="tab-announcements">
+    <div class="card card-body mb-3">
+      <div class="admin-section-title mb-2">Post new announcement</div>
+      <form method="POST" action="{{ url_for('admin.new_announcement') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" required maxlength="120" placeholder="Announcement title">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select name="kind" class="form-control">
+              <option value="info">Info</option>
+              <option value="success">Success</option>
+              <option value="warning">Warning</option>
+              <option value="danger">Alert</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Body</label>
+          <textarea name="body" class="form-control" rows="3" required maxlength="1000" placeholder="Announcement text…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Post announcement</button>
+      </form>
+    </div>
+    {% if announcements %}
+    <div style="display:flex;flex-direction:column;gap:.6rem;">
+      {% for a in announcements %}
+      <div class="alert alert-{{ a.kind }}" style="align-items:flex-start;">
+        <div style="flex:1;"><strong>{{ a.title }}</strong><div class="text-sm" style="opacity:.8;margin-top:.2rem;">{{ a.body }}</div></div>
+        <form method="POST" action="{{ url_for('admin.delete_announcement', ann_id=a.id) }}" style="margin-left:1rem;">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm" style="background:transparent;border:none;cursor:pointer;opacity:.6;" title="Delete">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}
+{% if selected_category %}{{ selected_category }} Courses{% elif selected_level %}{{ selected_level }} Courses{% else %}All Courses{% endif %} — LearnSphere
+{% endblock %}
+{% block content %}
+<style>
+.cl-header { background:var(--bg2); border-bottom:1px solid var(--border); padding:1.75rem 1.5rem; }
+.cl-header-inner { max-width:1200px; margin:0 auto; }
+.cl-title { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; letter-spacing:-.03em; }
+.cl-subtitle { color:var(--muted); font-size:.875rem; margin-top:.3rem; }
+.filters { border-bottom:1px solid var(--border); background:var(--bg); padding:.65rem 1.5rem; position:sticky; top:56px; z-index:10; }
+.filters-inner { max-width:1200px; margin:0 auto; display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; }
+.filter-sep { width:1px; height:18px; background:var(--border); margin:0 .15rem; flex-shrink:0; }
+.filter-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); flex-shrink:0; }
+.filter-btn { padding:.25rem .7rem; border-radius:100px; font-size:.78rem; font-weight:500; border:1px solid var(--border); background:var(--bg); color:var(--muted); text-decoration:none; transition:all .12s; white-space:nowrap; }
+.filter-btn:hover { background:var(--bg2); color:var(--ink); border-color:#bbb; }
+.filter-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+.cl-body { max-width:1200px; margin:0 auto; padding:1.5rem; }
+.cl-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.1rem; }
+.cl-count { font-size:.83rem; color:var(--muted); }
+.course-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:1rem; }
+.c-card { background:var(--bg); border:1px solid var(--border); border-radius:calc(var(--r)+2px); display:flex; flex-direction:column; gap:.45rem; padding:1.2rem; height:100%; transition:box-shadow .15s,transform .15s; }
+.c-card:hover { box-shadow:var(--shadow); transform:translateY(-2px); }
+.c-title { font-family:'Syne',sans-serif; font-size:.97rem; font-weight:700; letter-spacing:-.01em; line-height:1.3; }
+.c-desc { font-size:.82rem; color:var(--muted); line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; flex:1; }
+.c-footer { display:flex; justify-content:space-between; align-items:center; font-size:.77rem; color:var(--muted); padding-top:.55rem; border-top:1px solid var(--border); }
+.no-results { text-align:center; padding:5rem 2rem; color:var(--muted); grid-column:1/-1; }
+</style>
+
+<div class="cl-header">
+  <div class="cl-header-inner">
+    <div class="cl-title">
+      {% if selected_tag %}Courses tagged "{{ selected_tag }}"
+      {% elif selected_category and selected_level %}{{ selected_level }} · {{ selected_category }}
+      {% elif selected_category %}{{ selected_category }} courses
+      {% elif selected_level %}{{ selected_level }} courses
+      {% else %}All courses{% endif %}
+    </div>
+    <div class="cl-subtitle">{{ courses|length }} course{{ 's' if courses|length!=1 }} available</div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filters-inner">
+    <span class="filter-label">Level</span>
+    <a href="{{ url_for('courses.course_list', category=selected_category) }}" class="filter-btn {% if not selected_level %}active{% endif %}">All</a>
+    {% for lvl, emoji in [('Beginner','🟢'),('Intermediate','🟡'),('Advanced','🔴')] %}
+    <a href="{{ url_for('courses.course_list', level=lvl, category=selected_category) }}"
+       class="filter-btn {% if selected_level==lvl %}active{% endif %}">{{ emoji }} {{ lvl }}</a>
+    {% endfor %}
+
+    {% if categories %}
+    <div class="filter-sep"></div>
+    <span class="filter-label">Topic</span>
+    <a href="{{ url_for('courses.course_list', level=selected_level) }}" class="filter-btn {% if not selected_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('courses.course_list', category=cat, level=selected_level) }}"
+       class="filter-btn {% if selected_category==cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+    {% endif %}
+
+    {% if selected_tag %}
+    <div class="filter-sep"></div>
+    <span class="tag">🏷 {{ selected_tag }}&nbsp;<a href="{{ url_for('courses.course_list') }}" style="text-decoration:none;color:var(--muted);">✕</a></span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="cl-body">
+  <div class="course-grid">
+    {% for item in courses %}
+    {% set c = item.course %}
+    <a href="{{ url_for('courses.course_detail', course_id=c.id) }}" style="text-decoration:none;color:inherit;display:contents;">
+      <div class="c-card">
+        <div class="flex gap-1" style="flex-wrap:wrap;">
+          <span class="badge badge-{{ c.level|lower }}">{{ c.level }}</span>
+          <span class="badge badge-neutral">{{ c.category }}</span>
+        </div>
+        <div class="c-title">{{ c.title }}</div>
+        <div class="c-desc">{{ c.description }}</div>
+        {% if c.tags %}
+        <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.1rem;">
+          {% for t in c.tags.split(',')[:3] %}{% set tag=t.strip() %}{% if tag %}
+          <span class="tag" style="font-size:.7rem;padding:.1rem .4rem;">{{ tag }}</span>
+          {% endif %}{% endfor %}
+        </div>
+        {% endif %}
+        <div class="c-footer">
+          <span>{{ c.instructor }}</span>
+          <span>{% if item.avg_rating %}⭐ {{ item.avg_rating }}{% else %}⏱ {{ c.duration }}{% endif %}</span>
+        </div>
+      </div>
+    </a>
+    {% else %}
+    <div class="no-results">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">📭</div>
+      <div class="fw-700 font-syne" style="font-size:1.1rem;">No courses found</div>
+      <p class="text-sm mt-1">Try different filters or <a href="{{ url_for('courses.course_list') }}" style="color:var(--ink);">browse all courses</a>.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

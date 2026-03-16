@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Profile — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.profile-layout { max-width: 900px; margin: 2.5rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: 280px 1fr; gap: 2rem; align-items: start; }
+@media(max-width:700px){ .profile-layout { grid-template-columns: 1fr; } }
+.profile-card { border: 1px solid var(--border); border-radius: calc(var(--r)+2px); overflow: hidden; }
+.profile-card-top { padding: 2rem 1.5rem; text-align: center; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.profile-card-body { padding: 1.25rem; }
+.profile-username { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; margin-top: .75rem; }
+.profile-bio { font-size: .83rem; color: var(--muted); margin-top: .35rem; }
+.edit-section h2 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+.color-swatches { display: flex; gap: .4rem; flex-wrap: wrap; }
+.color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .12s; }
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: var(--ink); }
+.reviews-section h2 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+</style>
+
+<div class="profile-layout">
+  <div>
+    <div class="profile-card">
+      <div class="profile-card-top">
+        <div class="avatar" style="width:72px;height:72px;font-size:1.8rem;background:{{ user.avatar_color or '#18181b' }};margin:0 auto;">
+          {{ user.username[0].upper() }}
+        </div>
+        <div class="profile-username">{{ user.username }}</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem;">{{ user.email }}</div>
+        {% if user.bio %}<div class="profile-bio">{{ user.bio }}</div>{% endif %}
+        {% if user.is_admin %}<span class="badge badge-blue mt-2">Admin</span>{% endif %}
+      </div>
+      <div class="profile-card-body">
+        <div class="text-xs text-muted">Member since</div>
+        <div class="text-sm fw-600">{{ user.created_at[:10] }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="edit-section">
+      <h2>Edit profile</h2>
+      <form method="POST" action="{{ url_for('main.profile') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea name="bio" class="form-control" rows="3" placeholder="Tell others a bit about yourself…">{{ user.bio or '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Avatar colour</label>
+          <div class="color-swatches">
+            {% for color in ['#18181b','#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'] %}
+            <div class="color-swatch {% if (user.avatar_color or '#18181b')==color %}selected{% endif %}"
+              style="background:{{ color }};" onclick="pickColor('{{ color }}', this)"></div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="avatar_color" id="avatar_color_input" value="{{ user.avatar_color or '#18181b' }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+        <a href="{{ url_for('auth.change_password') }}" class="btn btn-secondary mt-2">Change password</a>
+      </form>
+    </div>
+
+
+    {% if certificates %}
+    <div class="mt-4">
+      <h2 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1rem;">My certificates</h2>
+      <div style="display:flex;flex-direction:column;gap:.6rem;">
+        {% for cert in certificates %}
+        <div class="card card-body flex justify-between items-center">
+          <div>
+            <div class="fw-600 text-sm">🎓 {{ cert.course_title }}</div>
+            <div class="text-xs text-muted mt-1">Issued {{ cert.issued_at[:10] }}</div>
+          </div>
+          <a href="{{ url_for('courses.verify_certificate', cert_code=cert.cert_code) }}" class="btn btn-secondary btn-sm" target="_blank">View →</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if reviews %}
+    <div class="reviews-section mt-4">
+      <h2>My reviews</h2>
+      <div style="display:flex;flex-direction:column;gap:.6rem;">
+        {% for r in reviews %}
+        <div class="card card-body">
+          <div class="flex justify-between items-center mb-1">
+            <a href="{{ url_for('courses.course_detail', course_id=r.course_id) }}" class="fw-600 text-sm" style="text-decoration:none;color:var(--ink);">{{ r.course_title }}</a>
+            <div class="stars" style="gap:1px;">
+              {% for i in range(1,6) %}<span class="star {% if i<=r.rating %}filled{% endif %}" style="font-size:.78rem;">★</span>{% endfor %}
+            </div>
+          </div>
+          {% if r.body %}<p class="text-sm" style="color:var(--ink2);">{{ r.body }}</p>{% endif %}
+          <div class="text-xs text-muted mt-1">{{ r.created_at[:10] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function pickColor(color, el) {
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('avatar_color_input').value = color;
+  document.querySelectorAll('.avatar').forEach(a => a.style.background = color);
+}
+</script>
+{% endblock %}

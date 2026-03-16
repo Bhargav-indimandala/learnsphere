@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{% if valid %}Certificate — {{ cert.course_title }}{% else %}Invalid Certificate{% endif %} — LearnSphere{% endblock %}
+{% block head %}
+<style>
+.cert-page { max-width: 760px; margin: 3rem auto; padding: 0 1.5rem; }
+.cert-invalid { text-align: center; padding: 4rem; }
+.cert-frame { border: 2px solid var(--border); border-radius: 12px; overflow: hidden; }
+.cert-top { background: var(--ink); color: #fff; padding: 2.5rem 3rem; text-align: center; }
+.cert-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; letter-spacing: -.02em; color: rgba(255,255,255,.5); margin-bottom: 1.5rem; }
+.cert-top h1 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 500; letter-spacing: .15em; text-transform: uppercase; color: rgba(255,255,255,.6); margin-bottom: .5rem; }
+.cert-top h2 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -.03em; }
+.cert-body { padding: 2.5rem 3rem; background: var(--bg); text-align: center; }
+.cert-awarded { font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; margin-bottom: .5rem; }
+.cert-name { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; letter-spacing: -.04em; color: var(--ink); margin-bottom: 1rem; }
+.cert-desc { font-size: .9rem; color: var(--muted); max-width: 480px; margin: 0 auto 1.5rem; line-height: 1.6; }
+.cert-meta { display: flex; justify-content: center; gap: 3rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.cert-meta-item { text-align: center; }
+.cert-meta-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.cert-meta-value { font-weight: 600; font-size: .9rem; margin-top: .2rem; }
+.cert-footer { background: var(--bg2); padding: 1rem 3rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.cert-code { font-family: monospace; font-size: .78rem; color: var(--muted); }
+.cert-verified { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 600; color: var(--green); }
+@media print { .no-print { display: none !important; } .cert-frame { border: 2px solid #000; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="cert-page">
+  {% if valid %}
+  <div class="flex justify-between items-center mb-3 no-print">
+    <a href="{{ url_for('courses.course_detail', course_id=cert.course_id) }}" class="btn btn-ghost btn-sm">← Back to course</a>
+    <button onclick="window.print()" class="btn btn-secondary btn-sm">🖨 Print / Save PDF</button>
+  </div>
+  <div class="cert-frame">
+    <div class="cert-top">
+      <div class="cert-logo">LearnSphere</div>
+      <h1>Certificate of Completion</h1>
+      <h2>{{ cert.course_title }}</h2>
+    </div>
+    <div class="cert-body">
+      <div class="cert-awarded">This certifies that</div>
+      <div class="cert-name">{{ cert.username }}</div>
+      <div class="cert-desc">has successfully completed all lessons in <strong>{{ cert.course_title }}</strong> on the LearnSphere platform, taught by {{ cert.instructor }}.</div>
+      <div style="font-size:2rem;">🎓</div>
+      <div class="cert-meta">
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Instructor</div>
+          <div class="cert-meta-value">{{ cert.instructor }}</div>
+        </div>
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Issued on</div>
+          <div class="cert-meta-value">{{ cert.issued_at[:10] }}</div>
+        </div>
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Platform</div>
+          <div class="cert-meta-value">LearnSphere</div>
+        </div>
+      </div>
+    </div>
+    <div class="cert-footer">
+      <div class="cert-code">ID: {{ cert.cert_code }}</div>
+      <div class="cert-verified">✓ Verified certificate</div>
+    </div>
+  </div>
+  <p class="text-xs text-muted mt-2 no-print" style="text-align:center;">
+    Verify this certificate at: <strong>{{ request.url }}</strong>
+  </p>
+  {% else %}
+  <div class="cert-invalid">
+    <div style="font-size:3rem;margin-bottom:1rem;">❌</div>
+    <h2 class="font-syne fw-700" style="font-size:1.4rem;margin-bottom:.5rem;">Invalid certificate</h2>
+    <p class="text-muted">This certificate code does not exist or has been revoked.</p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-primary mt-3">Go home</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

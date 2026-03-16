@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}
+{% if purpose == 'verify_email' %}Verify Email
+{% elif purpose == '2fa' %}Two-Factor Login
+{% elif purpose == 'reset_password' %}Enter Reset Code
+{% endif %} — LearnSphere
+{% endblock %}
+{% block head %}
+<style>
+.otp-wrap { display:flex; min-height:calc(100vh - 57px); align-items:center; justify-content:center; padding:2rem 1.5rem; }
+.otp-box { width:100%; max-width:400px; }
+.otp-icon { font-size:2.5rem; margin-bottom:1rem; }
+.otp-title { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; letter-spacing:-.03em; margin-bottom:.3rem; }
+.otp-sub { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.55; }
+.otp-sub strong { color:var(--ink); }
+.otp-inputs { display:flex; gap:.5rem; justify-content:center; margin:1.25rem 0; }
+.otp-inputs input[type=text] {
+  width:48px; height:56px; text-align:center;
+  font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:700;
+  border:1.5px solid var(--border); border-radius:var(--r);
+  outline:none; background:var(--bg); color:var(--ink);
+  transition:border-color .12s, box-shadow .12s;
+}
+.otp-inputs input[type=text]:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(17,17,16,.08); }
+.otp-inputs input[type=text].filled { border-color:var(--ink); background:var(--bg2); }
+.otp-expiry { text-align:center; font-size:.78rem; color:var(--muted); margin-bottom:1.25rem; }
+.otp-expiry span { font-weight:600; color:var(--ink); }
+.resend-row { text-align:center; margin-top:1.25rem; font-size:.82rem; color:var(--muted); }
+.resend-row button { background:none; border:none; color:var(--blue); font-weight:600; cursor:pointer; font-family:inherit; font-size:.82rem; }
+.resend-row button:hover { text-decoration:underline; }
+.purpose-info { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); padding:.75rem 1rem; font-size:.82rem; color:var(--muted); margin-bottom:1.25rem; }
+.purpose-info strong { color:var(--ink); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="otp-wrap">
+  <div class="otp-box">
+    <div class="otp-icon">
+      {% if purpose == 'verify_email' %}📧
+      {% elif purpose == '2fa' %}🔐
+      {% elif purpose == 'reset_password' %}🔑
+      {% endif %}
+    </div>
+    <div class="otp-title">
+      {% if purpose == 'verify_email' %}Verify your email
+      {% elif purpose == '2fa' %}Two-factor verification
+      {% elif purpose == 'reset_password' %}Enter reset code
+      {% endif %}
+    </div>
+    <p class="otp-sub">
+      We sent a 6-digit code to <strong>{{ email }}</strong>.
+      {% if purpose == 'verify_email' %}Enter it below to activate your account.
+      {% elif purpose == '2fa' %}Enter it below to complete sign-in.
+      {% elif purpose == 'reset_password' %}Enter it below to reset your password.
+      {% endif %}
+    </p>
+
+    <div class="purpose-info">
+      <strong>📟 Dev mode:</strong> The code was printed to your terminal / server log.
+      In production, replace <code>_send_otp()</code> in <code>app/__init__.py</code> with real email sending.
+    </div>
+
+    <form method="POST" action="{{ action_url }}" id="otp-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <!-- 6 individual digit boxes — JS combines into hidden input -->
+      <div class="otp-inputs" id="otp-boxes">
+        {% for i in range(6) %}
+        <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+          class="otp-digit" id="d{{ i }}" autocomplete="{% if i==0 %}one-time-code{% endif %}">
+        {% endfor %}
+      </div>
+      <input type="hidden" name="otp" id="otp-hidden">
+      <div class="otp-expiry" id="otp-timer">Code expires in <span id="timer-val">10:00</span></div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="otp-submit" disabled>Verify code</button>
+    </form>
+
+    <div class="resend-row">
+      Didn't receive it?
+      <form method="POST" action="{{ url_for('auth.resend_otp') }}" style="display:inline;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="purpose" value="{{ purpose }}">
+        <button type="submit">Resend code</button>
+      </form>
+    </div>
+
+    <div style="text-align:center;margin-top:1.25rem;">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">← Back to login</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const digits  = Array.from(document.querySelectorAll('.otp-digit'));
+  const hidden  = document.getElementById('otp-hidden');
+  const submit  = document.getElementById('otp-submit');
+  const form    = document.getElementById('otp-form');
+  const timerEl = document.getElementById('timer-val');
+
+  // Auto-advance between boxes
+  digits.forEach((el, i) => {
+    el.addEventListener('input', e => {
+      // Handle paste of full code
+      const val = e.target.value;
+      if (val.length > 1) {
+        const chars = val.replace(/\D/g, '').slice(0, 6).split('');
+        chars.forEach((c, j) => { if (digits[j]) digits[j].value = c; });
+        digits[Math.min(chars.length, 5)].focus();
+      } else {
+        el.value = val.replace(/\D/g, '');
+        el.classList.toggle('filled', el.value !== '');
+        if (el.value && i < 5) digits[i + 1].focus();
+      }
+      updateState();
+    });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !el.value && i > 0) {
+        digits[i - 1].focus();
+        digits[i - 1].value = '';
+        digits[i - 1].classList.remove('filled');
+        updateState();
+      }
+    });
+
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      text.split('').forEach((c, j) => { if (digits[j]) { digits[j].value = c; digits[j].classList.add('filled'); } });
+      digits[Math.min(text.length, 5)].focus();
+      updateState();
+    });
+  });
+
+  function updateState() {
+    const code = digits.map(d => d.value).join('');
+    hidden.value = code;
+    submit.disabled = code.length < 6;
+  }
+
+  // Auto-submit when 6 digits entered
+  function checkAutoSubmit() {
+    const code = digits.map(d => d.value).join('');
+    if (code.length === 6) {
+      setTimeout(() => form.submit(), 300);
+    }
+  }
+  digits[5].addEventListener('input', checkAutoSubmit);
+
+  // Countdown timer (10 minutes)
+  let seconds = 600;
+  const interval = setInterval(() => {
+    seconds--;
+    if (seconds <= 0) {
+      clearInterval(interval);
+      timerEl.parentElement.innerHTML = '<span style="color:var(--red);font-weight:600;">Code expired — please request a new one.</span>';
+      submit.disabled = true;
+      return;
+    }
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    timerEl.textContent = `${m}:${s}`;
+    if (seconds <= 60) timerEl.style.color = 'var(--red)';
+  }, 1000);
+
+  // Focus first box
+  digits[0].focus();
+})();
+</script>
+{% endblock %}

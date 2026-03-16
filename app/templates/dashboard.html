@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.dash-header { border-bottom: 1px solid var(--border); padding: 2rem 1.5rem; background: var(--bg2); }
+.dash-header-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.dash-welcome { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; }
+.stats-row { max-width: 1200px; margin: 1.5rem auto 0; padding: 0 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 1rem; }
+.stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: calc(var(--r)+2px); padding: 1.1rem; }
+.stat-card .n { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; }
+.stat-card .l { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-top: .35rem; }
+.section { max-width: 1200px; margin: 2rem auto 0; padding: 0 1.5rem; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+.enroll-card { background: var(--bg); border: 1px solid var(--border); border-radius: calc(var(--r)+2px); padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; transition: box-shadow .15s; }
+.enroll-card:hover { box-shadow: var(--shadow); }
+.enroll-card-info { flex: 1; min-width: 0; }
+.enroll-card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.enroll-card-meta { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+.enroll-card-progress { width: 120px; flex-shrink: 0; }
+</style>
+
+<div class="dash-header">
+  <div class="dash-header-inner">
+    <div>
+      <div class="dash-welcome">
+        <div class="avatar" style="width:42px;height:42px;display:inline-flex;font-size:1rem;background:{{ user.avatar_color or '#18181b' }};margin-right:.6rem;vertical-align:middle;">
+          {{ user.username[0].upper() }}
+        </div>
+        {{ user.username }}
+      </div>
+      {% if user.bio %}<p class="text-sm text-muted mt-1">{{ user.bio }}</p>{% endif %}
+    </div>
+    <a href="{{ url_for('courses.course_list') }}" class="btn btn-primary">Browse courses</a>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="n">{{ enrollments|length }}</div><div class="l">Enrolled</div></div>
+  <div class="stat-card"><div class="n">{{ progress_map.values()|selectattr('pct','equalto',100)|list|length }}</div><div class="l">Completed</div></div>
+  <div class="stat-card"><div class="n">{{ total_courses }}</div><div class="l">Total courses</div></div>
+  <div class="stat-card">
+    <div class="n">{% if enrollments %}{{ (progress_map.values()|map(attribute='pct')|sum / enrollments|length)|int }}%{% else %}—{% endif %}</div>
+    <div class="l">Avg. progress</div>
+  </div>
+</div>
+
+
+  {% if cert_set %}
+  <div class="section mt-3" style="padding-bottom:1rem;">
+    <div class="section-title">Certificates earned 🎓</div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      {% for cert in certificates %}
+      <a href="{{ url_for('courses.verify_certificate', cert_code=cert.cert_code) }}" class="card card-body" style="text-decoration:none;color:inherit;padding:.85rem 1.1rem;display:flex;align-items:center;gap:.6rem;" target="_blank">
+        <span style="font-size:1.3rem;">🏅</span>
+        <div>
+          <div class="fw-600 text-sm">Certificate earned</div>
+          <div class="text-xs text-muted">Issued {{ cert.issued_at[:10] }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+<div class="section" style="padding-bottom:3rem;">
+  <div class="section-title">My courses</div>
+  {% if enrollments %}
+  <div style="display:flex;flex-direction:column;gap:.6rem;">
+    {% for c in enrollments %}
+    {% set prog = progress_map[c.id] %}
+    <a href="{{ url_for('courses.course_detail', course_id=c.id) }}" style="text-decoration:none;color:inherit;">
+      <div class="enroll-card">
+        <div class="avatar" style="width:40px;height:40px;font-size:.85rem;background:var(--ink);flex-shrink:0;">
+          {{ c.title[0] }}
+        </div>
+        <div class="enroll-card-info">
+          <div class="enroll-card-title">{{ c.title }}</div>
+          <div class="enroll-card-meta">
+            <span class="badge badge-{{ c.level|lower }}" style="font-size:.65rem;">{{ c.level }}</span>
+            &nbsp;{{ c.instructor }} · {{ c.duration }}
+          </div>
+        </div>
+        <div class="enroll-card-progress">
+          <div class="flex justify-between text-xs text-muted mb-1">
+            <span>Progress</span><span>{{ prog.done }}/{{ prog.total }}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ prog.pct }}%"></div>
+          </div>
+          {% if prog.pct == 100 %}<div class="text-xs" style="color:var(--green);margin-top:.3rem;font-weight:600;">✓ Complete</div>{% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📚</div>
+    <div class="fw-600">No courses yet</div>
+    <p class="text-sm mt-1">Start learning — enrol in your first course.</p>
+    <a href="{{ url_for('courses.course_list') }}" class="btn btn-primary mt-3">Browse courses</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

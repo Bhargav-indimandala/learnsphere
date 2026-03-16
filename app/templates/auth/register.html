@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Sign up — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.auth-wrap { display: flex; min-height: calc(100vh - 57px); }
+.auth-aside { flex: 1; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; padding: 3rem; }
+.auth-aside-inner { max-width: 360px; }
+.auth-aside h2 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .75rem; }
+.auth-aside p { font-size: .875rem; color: rgba(255,255,255,.55); line-height: 1.65; }
+.auth-aside ul { margin-top: 1.25rem; display: flex; flex-direction: column; gap: .5rem; }
+.auth-aside li { font-size: .875rem; color: rgba(255,255,255,.8); display: flex; gap: .5rem; }
+.auth-main { display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; flex: 0 0 420px; }
+.auth-box { width: 100%; max-width: 360px; }
+.auth-box h1 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .25rem; }
+.auth-box .sub { color: var(--muted); font-size: .875rem; margin-bottom: 1.75rem; }
+.auth-link { font-size: .8rem; color: var(--muted); margin-top: 1.25rem; text-align: center; }
+.auth-link a { color: var(--ink); font-weight: 600; text-decoration: none; }
+@media(max-width:700px){ .auth-aside { display: none; } .auth-main { flex: 1; } }
+</style>
+<div class="auth-wrap">
+  <div class="auth-aside">
+    <div class="auth-aside-inner">
+      <h2>Start learning today</h2>
+      <p>Join thousands of students building skills in programming, data science, AI, and more.</p>
+      <ul>
+        <li>✓ Free access to all courses</li>
+        <li>✓ Progress tracking per lesson</li>
+        <li>✓ Rate and review courses</li>
+        <li>✓ Personalised dashboard</li>
+      </ul>
+    </div>
+  </div>
+  <div class="auth-main">
+    <div class="auth-box">
+      <h1>Create account</h1>
+      <p class="sub">Free forever. No credit card required.</p>
+      <form method="POST" action="{{ url_for('auth.register') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-control" placeholder="yourname" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Min. 8 chars" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm</label>
+            <input type="password" name="confirm_password" class="form-control" placeholder="Repeat" required autocomplete="new-password">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full btn-lg">Create account →</button>
+      </form>
+      <div class="auth-link">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

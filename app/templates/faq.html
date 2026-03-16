@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}FAQ — LearnSphere{% endblock %}
+{% block content %}
+<style>
+.faq-page { max-width: 760px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q { display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 0; cursor: pointer; font-weight: 600; font-size: .95rem; gap: 1rem; user-select: none; }
+.faq-q:hover { color: var(--ink2); }
+.faq-icon { font-size: 1.1rem; color: var(--muted); transition: transform .2s; flex-shrink: 0; }
+.faq-a { font-size: .875rem; color: var(--ink2); line-height: 1.7; padding-bottom: 1rem; display: none; }
+.faq-a.open { display: block; }
+.faq-icon.open { transform: rotate(45deg); }
+.faq-section-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 2rem 0 .5rem; }
+</style>
+<div class="faq-page">
+  <div class="page-header">
+    <h1>Frequently asked questions</h1>
+    <p>Everything you need to know about LearnSphere.</p>
+  </div>
+
+  <div class="faq-section-title">Getting started</div>
+  {% for q, a in [
+    ("Is LearnSphere free?", "Yes — completely free. Create an account and enrol in any course at no cost. There are no hidden fees, subscriptions, or credit card requirements."),
+    ("How do I create an account?", "Click 'Sign up' in the top navigation, fill in your username, email, and a password of at least 8 characters. You'll be logged in instantly."),
+    ("Can I use LearnSphere on mobile?", "Yes. The platform is fully responsive and works on phones and tablets. For the best experience on small screens, use landscape mode when watching embedded videos."),
+    ("Do I need any prior knowledge to start?", "It depends on the course. Each course is labelled Beginner, Intermediate, or Advanced. Beginner courses assume no prior knowledge. Check the course syllabus for prerequisites."),
+  ] %}
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggle(this)">{{ q }}<span class="faq-icon">+</span></div>
+    <div class="faq-a">{{ a }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="faq-section-title">Courses & learning</div>
+  {% for q, a in [
+    ("How do I enrol in a course?", "Open any course page and click the 'Enrol now' button on the right sidebar. You must be logged in to enrol. Enrolment is instant and free."),
+    ("How does progress tracking work?", "Once enrolled, each lesson in the Lessons section has a checkbox. Click it to mark a lesson complete. Your progress bar updates in real time and is saved to your account."),
+    ("Can I earn a certificate?", "Yes! Complete all lessons in a course and a certificate of completion is automatically issued. You can view and print it from the course page or your Profile. Each certificate has a unique URL that can be shared or verified."),
+    ("How do I leave a review?", "Enrol in a course, then scroll to the Reviews section at the bottom of the course page. You can rate it 1–5 stars and write a comment. You can update your review at any time."),
+    ("Are the video lessons embedded?", "Yes. Course preview videos are embedded from YouTube. You will need an internet connection to watch them. All other course content (syllabus, lessons, progress) works without a video connection."),
+    ("How many courses are available?", "There are currently 15 courses spanning Programming, Data Science, AI & ML, Web Dev, DevOps, Security, Mobile, Design, Cloud, Blockchain, and Mathematics. New courses are added regularly — check the Announcements page for updates."),
+  ] %}
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggle(this)">{{ q }}<span class="faq-icon">+</span></div>
+    <div class="faq-a">{{ a }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="faq-section-title">Account & security</div>
+  {% for q, a in [
+    ("How is my password stored?", "Passwords are hashed using PBKDF2-HMAC-SHA256 with 260,000 iterations and a random salt — a standard used by Django, OWASP, and NIST. Your plain-text password is never stored."),
+    ("How do I change my password?", "Go to Profile → and click 'Change password'. You'll need to enter your current password to confirm the change."),
+    ("Will I be logged out automatically?", "Yes. For security, sessions expire after 1 hour of inactivity. You'll be redirected to the login page when this happens."),
+    ("Is my data shared with third parties?", "No. LearnSphere does not share your data with any third party. The only external connection is Google Fonts (for typography) and YouTube (for embedded videos)."),
+    ("How do I delete my account?", "Contact the platform administrator. Admins can delete user accounts from the Admin panel, which also removes all associated progress, reviews, and enrolments."),
+  ] %}
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggle(this)">{{ q }}<span class="faq-icon">+</span></div>
+    <div class="faq-a">{{ a }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="faq-section-title">Administration</div>
+  {% for q, a in [
+    ("How do I become an admin?", "Ask an existing admin to grant you admin access via the Admin → Users tab, or run the one-line command from the README after logging in for the first time."),
+    ("What can admins do?", "Admins can create, edit, and delete courses; manage the full user list (grant/revoke admin, delete users); post and delete announcements; and view platform analytics including enrollments, reviews, and popular courses."),
+    ("How do I add a new course?", "Go to Admin → click '+ New course'. Fill in the title, description, instructor, level, video URL, and syllabus (one lesson per line). Each line automatically becomes a trackable lesson."),
+  ] %}
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggle(this)">{{ q }}<span class="faq-icon">+</span></div>
+    <div class="faq-a">{{ a }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function toggle(el) {
+  const a = el.nextElementSibling;
+  const icon = el.querySelector('.faq-icon');
+  const open = a.classList.toggle('open');
+  icon.classList.toggle('open', open);
+}
+</script>
+{% endblock %}

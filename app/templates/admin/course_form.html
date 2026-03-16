@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Course — Admin{% endblock %}
+{% block content %}
+<style>
+.form-page { max-width: 780px; margin: 2.5rem auto; padding: 0 1.5rem; }
+.form-page h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; margin-bottom: 1.75rem; }
+.form-card { background: var(--bg); border: 1px solid var(--border); border-radius: calc(var(--r)+2px); padding: 1.75rem; }
+.form-section-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-bottom: .6rem; border-bottom: 1px solid var(--border); margin-bottom: 1.1rem; margin-top: 1.5rem; }
+.form-actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
+</style>
+
+<div class="form-page">
+  <div class="flex items-center gap-2 mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost btn-sm">← Back</a>
+  </div>
+  <h1>{{ action }} Course</h1>
+  <div class="form-card">
+    <form method="POST">
+      <div class="form-section-title">Basic info</div>
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" name="title" class="form-control" required value="{{ course.title if course else '' }}" placeholder="e.g. Python for Beginners">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="4" placeholder="What will students learn?">{{ course.description if course else '' }}</textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input type="text" name="category" class="form-control" value="{{ course.category if course else '' }}" placeholder="e.g. Programming">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Level</label>
+          <select name="level" class="form-control">
+            {% for lvl in ['Beginner','Intermediate','Advanced'] %}
+            <option value="{{ lvl }}" {% if course and course.level==lvl %}selected{% endif %}>{{ lvl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Duration</label>
+          <input type="text" name="duration" class="form-control" value="{{ course.duration if course else '' }}" placeholder="e.g. 6 weeks">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags</label>
+          <input type="text" name="tags" class="form-control" value="{{ course.tags if course else '' }}" placeholder="python,beginner,oop (comma-separated)">
+          <div class="form-hint">Comma-separated topic tags</div>
+        </div>
+      </div>
+
+      <div class="form-section-title">Instructor</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" name="instructor" class="form-control" value="{{ course.instructor if course else '' }}" placeholder="Dr. Jane Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio / credentials</label>
+          <input type="text" name="instructor_bio" class="form-control" value="{{ course.instructor_bio if course else '' }}" placeholder="PhD Stanford, 10 years teaching">
+        </div>
+      </div>
+
+      <div class="form-section-title">Content</div>
+      <div class="form-group">
+        <label class="form-label">Video URL (YouTube embed)</label>
+        <input type="url" name="video_url" class="form-control" value="{{ course.video_url if course else '' }}" placeholder="https://www.youtube.com/embed/...">
+        <div class="form-hint">Use the /embed/ URL format from YouTube</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Syllabus / Lessons</label>
+        <textarea name="syllabus" class="form-control" rows="8" placeholder="Week 1: Introduction&#10;Week 2: Core Concepts&#10;Week 3: Projects">{{ course.syllabus if course else '' }}</textarea>
+        <div class="form-hint">One lesson per line — each line becomes a trackable lesson</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ action }} course</button>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
